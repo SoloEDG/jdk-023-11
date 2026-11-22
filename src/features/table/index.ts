@@ -14,6 +14,22 @@ export {
   tickMechanisms,
 } from '@/features/table/model/mechanism-rules'
 export type { KeptRecords } from '@/features/table/model/mechanism-rules'
+export {
+  HIT_FLASH_MS,
+  LAMP_BEAT_MS,
+  LAMP_BEATS,
+  LAMP_LOOP_MS,
+  flashMechanism,
+  lampBeat,
+  lampColor,
+  lampFlashed,
+  lampGlow,
+  lampIndexOf,
+  lampLit,
+  lampMode,
+  tickLamps,
+} from '@/features/table/model/lamp-timeline'
+export type { LampMode } from '@/features/table/model/lamp-timeline'
 export { default as TableView } from '@/features/table/ui/TableView.vue'
 export { default as MechanismPanel } from '@/features/table/ui/MechanismPanel.vue'
 

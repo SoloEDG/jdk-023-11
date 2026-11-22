@@ -1,5 +1,6 @@
 import type { PinballDocument } from '@/shared/document'
 import { polar } from '@/shared/geometry'
+import { lampGlow, lampIndexOf } from '@/features/table/model/lamp-timeline'
 import {
   VIEW,
   anchors,
@@ -44,15 +45,11 @@ function rails(ctx: CanvasRenderingContext2D): void {
   ctx.stroke()
 }
 
-function lampColor(index: number, bonus: boolean): string {
-  if (bonus) return index % 2 === 0 ? '#ffe08a' : '#ffd0dc'
-  return ['#ffd56a', '#ff8b3d', '#fff6e8'][index] ?? '#ffd56a'
-}
-
 function bumpersOf(ctx: CanvasRenderingContext2D, doc: PinballDocument): void {
   for (const bumper of bumpers) {
     const state = doc.mechanisms.find((item) => item.id === bumper.id)
-    const color = lampColor(state?.lamp ?? 0, doc.chain.bonusMs > 0)
+    // 颜色完全由灯时间轴（或命中闪灯）决定，不写回机关状态。
+    const color = lampGlow(doc, state, lampIndexOf(doc, bumper.id))
     ctx.beginPath()
     ctx.fillStyle = '#7a1d32'
     ctx.arc(bumper.x, bumper.y, bumper.r + 6, 0, Math.PI * 2)
@@ -141,7 +138,8 @@ function holeOf(ctx: CanvasRenderingContext2D, doc: PinballDocument): void {
   ctx.fillStyle = '#08110f'
   ctx.arc(hole.x, hole.y, hole.r, 0, Math.PI * 2)
   ctx.fill()
-  ctx.strokeStyle = state?.lamp ? '#ffd56a' : '#d7a441'
+  // 命中时闪一下，然后交还时间轴当前的颜色。
+  ctx.strokeStyle = lampGlow(doc, state, lampIndexOf(doc, hole.id))
   ctx.lineWidth = 3
   ctx.stroke()
 }

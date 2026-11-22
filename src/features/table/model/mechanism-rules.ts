@@ -11,6 +11,7 @@ import {
 } from '@/shared/document'
 import { BodyId } from '@/shared/ids'
 import { anchors, stickPlunger } from '@/features/table/lib/playfield-layout'
+import { flashMechanism } from '@/features/table/model/lamp-timeline'
 
 const COOLDOWN_MS: Record<MechanismKind, number> = {
   bumper: 160,
@@ -39,7 +40,7 @@ function blank(id: string, kind: MechanismKind, label: string): MechanismState {
     kind,
     label,
     cooldownMs: 0,
-    lamp: 0,
+    flashMs: 0,
     up: true,
     openMs: 0,
     lit: false,
@@ -100,7 +101,6 @@ export function tickMechanisms(doc: PinballDocument, dtMs: number): void {
       mechanism.spin += mechanism.spinOmega * (dtMs / 1000)
       mechanism.spinOmega *= Math.exp(-1.7 * (dtMs / 1000))
     }
-    if (mechanism.kind === 'hole' && mechanism.cooldownMs === 0) mechanism.lamp = 0
   }
   const gate = findMechanism(doc, BodyId.gate)
   if (gate && gate.openMs > 0 && doc.chain.bonusMs <= 0) {
@@ -112,7 +112,6 @@ export function tickMechanisms(doc: PinballDocument, dtMs: number): void {
   for (const mechanism of doc.mechanisms) {
     if (mechanism.kind !== 'drop') continue
     mechanism.up = true
-    mechanism.lamp = 0
   }
   if (gate) gate.openMs = Math.max(gate.openMs, GATE_HOLD_MS)
   doc.live.bankClears += 1
@@ -124,20 +123,22 @@ export function consumeContacts(doc: PinballDocument, events: ContactEvent[]): v
   for (const event of events) {
     const mechanism = findMechanism(doc, event.id)
     if (!mechanism) continue
+    // 命中只挂一段短暂闪灯；时间轴仍在下面走，闪完会落回当前拍。
+    flashMechanism(mechanism)
     if (mechanism.kind === 'drop' && mechanism.up) {
       mechanism.up = false
-      mechanism.lamp = 1
       const drops = doc.mechanisms.filter((item) => item.kind === 'drop')
       if (drops.every((item) => !item.up) && !doc.live.bankPending) {
         doc.live.bankPending = true
         doc.live.bankResetMs = BANK_RESET_MS
       }
     }
-    if (mechanism.kind === 'bumper') mechanism.lamp = (mechanism.lamp + 1) % 3
     if (mechanism.kind === 'lane') mechanism.lit = true
     if (mechanism.kind === 'spinner') {
       mechanism.spinOmega = Math.min(28, Math.max(mechanism.spinOmega, 6 + event.speed * 0.012))
     }
-    if (mechanism.kind === 'hole' || mechanism.kind === 'ramp') mechanism.lamp = 1
+    if (mechanism.kind === 'hole' || mechanism.kind === 'ramp') {
+      flashMechanism(mechanism)
+    }
   }
 }

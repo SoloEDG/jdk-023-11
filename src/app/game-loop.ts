@@ -4,7 +4,7 @@ import { absorbZones, tickBonus } from '@/features/bonus'
 import { advanceControls } from '@/features/flippers'
 import { persist, syncRecords } from '@/features/records'
 import { simulateBall } from '@/features/scoring'
-import { anchors, consumeContacts, publishGates, sampleRamp, sampleScoop, stickPlunger, syncTable } from '@/features/table'
+import { anchors, consumeContacts, publishGates, sampleRamp, sampleScoop, stickPlunger, syncTable, tickLamps } from '@/features/table'
 import { applyDrain, restartGame, togglePause } from '@/app/cabinet-actions'
 
 export function runFrame(doc: PinballDocument, input: FrameInput, dtMs: number): void {
@@ -20,6 +20,8 @@ export function runFrame(doc: PinballDocument, input: FrameInput, dtMs: number):
   if (doc.phase !== 'paused' && doc.note.ms > 0) doc.note.ms -= dtMs
   if (doc.phase === 'paused' || doc.phase === 'gameover') return
 
+  // 灯时间轴只在前台推进：暂停/结束时 clockMs 不动，继续后从同一拍接着走。
+  tickLamps(doc, dtMs)
   advanceControls(doc, input, dtMs, anchors())
   if (doc.ball.held === 'plunger') stickPlunger(doc)
   if (doc.phase !== 'playing') return

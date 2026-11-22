@@ -51,12 +51,18 @@ export interface MechanismState {
   kind: MechanismKind
   label: string
   cooldownMs: number
-  lamp: number
+  /** 命中后的闪灯剩余时间。它只是覆盖层，时间轴仍在下面走。 */
+  flashMs: number
   up: boolean
   openMs: number
   lit: boolean
   spin: number
   spinOmega: number
+}
+
+export interface LampState {
+  /** 灯时间轴已走过的毫秒数。暂停时不累加，因此不含暂停时长。 */
+  clockMs: number
 }
 
 export interface ChainState {
@@ -124,6 +130,7 @@ export interface PinballDocument {
   plunger: PlungerState
   nudge: NudgeState
   mechanisms: MechanismState[]
+  lamps: LampState
   gates: { rampOpen: boolean }
   chain: ChainState
   live: LiveGoals
@@ -166,6 +173,7 @@ export function createDocument(): PinballDocument {
     plunger: { power: 0, charging: false },
     nudge: { warnings: 0, tilted: false, flashMs: 0, flashDir: 0 },
     mechanisms: [],
+    lamps: { clockMs: 0 },
     gates: { rampOpen: false },
     chain: { count: 0, lastZone: null, remainMs: 0, bonusMs: 0, multiplier: 1 },
     live: { bonusEntries: 0, bankClears: 0, tilted: false, bankPending: false, bankResetMs: 0 },
